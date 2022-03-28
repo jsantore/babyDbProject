@@ -33,4 +33,15 @@ func create_tables(database *sql.DB) {
 		"  cap INTEGER DEFAULT 20,    description TEXT,   " +
 		" PRIMARY KEY(course_prefix, course_number)"
 	database.Exec(courseCreateStatement)
+	regcourseCreateStatement := "CREATE TABLE IF NOT EXISTS class_list(" +
+		"registration_id INTEGER PRIMARY KEY," +
+		"course_prefix TEXT NOT NULL," +
+		"course_number INTEGER NOT NULL," +
+		"banner_id INTEGER NOT NULL," +
+		"registration_date TEXT," +
+		"FOREIGN KEY (banner_id) REFERENCES student (banner_id)" +
+		"ON DELETE CASCADE ON UPDATE NO ACTION," +
+		"FOREIGN KEY (course_prefix, course_number) REFERENCES courses (course_prefix, course_number)" +
+		"ON DELETE CASCADE ON UPDATE NO ACTION"
+	database.Exec(regcourseCreateStatement)
 }
