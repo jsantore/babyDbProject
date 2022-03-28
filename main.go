@@ -18,3 +18,19 @@ func OpenDataBase(dbfile string) *sql.DB {
 	}
 	return database
 }
+
+func create_tables(database *sql.DB) {
+	createStatement1 := "CREATE TABLE IF NOT EXISTS students(    " +
+		"banner_id INTEGER PRIMARY KEY," +
+		"first_name TEXT NOT NULL," +
+		"last_name TEXT NOT NULL," +
+		"gpa REAL DEFAULT 0," +
+		"credits INTEGER DEFAULT 0);"
+	database.Exec(createStatement1)
+	courseCreateStatement := "CREATE TABLE IF NOT EXISTS course(   " +
+		" course_prefix TEXT NOT NULL,  " +
+		"  course_number INTEGER NOT NULL,  " +
+		"  cap INTEGER DEFAULT 20,    description TEXT,   " +
+		" PRIMARY KEY(course_prefix, course_number)"
+	database.Exec(courseCreateStatement)
+}
