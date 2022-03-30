@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3" //import for side effects
 	"log"
+	"math/rand"
 )
 
 func main() {
 	myDatabase := OpenDataBase("./Demo.db")
 	defer myDatabase.Close()
 	create_tables(myDatabase)
+	add_sample_data(myDatabase)
 }
 func OpenDataBase(dbfile string) *sql.DB {
 	database, err := sql.Open("sqlite3", dbfile)
@@ -44,4 +46,23 @@ func create_tables(database *sql.DB) {
 		"FOREIGN KEY (course_prefix, course_number) REFERENCES courses (course_prefix, course_number)" +
 		"ON DELETE CASCADE ON UPDATE NO ACTION"
 	database.Exec(regcourseCreateStatement)
+}
+
+func add_sample_data(database *sql.DB) {
+	sampleNames := map[string]string{"John": "Santore", "Enping": "Li", "Margaret": "Black",
+		"Seikyung": "Jung", "Haleh": "Khojasteh", "Abdul": "Sattar", "Paul": "Kim", "Laura": "Gross"}
+	statement := "INSERT INTO STUDENTS (banner_id, first_name, last_name, gpa, credits)" +
+		"  VALUES (?, ?, ?, ?, ?)"
+	count := 1001
+	for firstName, lastName := range sampleNames {
+		randGPA := rand.Float32() + float32(rand.Intn(4))
+		randCredits := rand.Intn(120)
+		prepped_statement, err := database.Prepare(statement)
+		if err != nil {
+			//cowardly bail out since this is academia
+			log.Fatal(err)
+		}
+		prepped_statement.Exec(count, firstName, lastName, randGPA, randCredits)
+		count += 1
+	}
 }
