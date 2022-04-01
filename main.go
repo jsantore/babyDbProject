@@ -4,10 +4,10 @@ import (
 	//	"database/sql"
 	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3" //import for side effects
 	"log"
 	"math/rand"
 	"strconv"
-	//	_ "github.com/mattn/go-sqlite3" //import for side effects
 	//	"log"
 	//	"math/rand"
 )
@@ -31,10 +31,10 @@ var sampleData = map[string]string{
 }
 
 func main() {
-	myDatabase := OpenDataBase("./Demo.db")
+	myDatabase := OpenDataBase("./Demo.sqlite")
 	defer myDatabase.Close()
 	create_tables(myDatabase)
-	add_sample_data(myDatabase)
+	addSampleData(myDatabase)
 	addCourseData(myDatabase)
 	register_students(myDatabase)
 }
@@ -54,13 +54,17 @@ func create_tables(database *sql.DB) {
 		"last_name TEXT NOT NULL," +
 		"gpa REAL DEFAULT 0," +
 		"credits INTEGER DEFAULT 0);"
-	database.Exec(createStatement1)
-	courseCreateStatement := "CREATE TABLE IF NOT EXISTS course(   " +
+	if _, err := database.Exec(createStatement1); err != nil {
+		log.Fatal(err)
+	}
+	courseCreateStatement := "CREATE TABLE IF NOT EXISTS courses(   " +
 		" course_prefix TEXT NOT NULL,  " +
 		"  course_number INTEGER NOT NULL,  " +
 		"  cap INTEGER DEFAULT 20,    description TEXT,   " +
-		" PRIMARY KEY(course_prefix, course_number)"
-	database.Exec(courseCreateStatement)
+		" PRIMARY KEY(course_prefix, course_number));"
+	if _, err := database.Exec(courseCreateStatement); err != nil {
+		log.Fatal("course", err)
+	}
 	regcourseCreateStatement := "CREATE TABLE IF NOT EXISTS class_list(" +
 		"registration_id INTEGER PRIMARY KEY," +
 		"course_prefix TEXT NOT NULL," +
@@ -70,11 +74,14 @@ func create_tables(database *sql.DB) {
 		"FOREIGN KEY (banner_id) REFERENCES student (banner_id)" +
 		"ON DELETE CASCADE ON UPDATE NO ACTION," +
 		"FOREIGN KEY (course_prefix, course_number) REFERENCES courses (course_prefix, course_number)" +
-		"ON DELETE CASCADE ON UPDATE NO ACTION"
-	database.Exec(regcourseCreateStatement)
+		"ON DELETE CASCADE ON UPDATE NO ACTION);"
+	if _, err := database.Exec(regcourseCreateStatement); err != nil {
+		log.Fatal(err)
+	}
+
 }
 
-func add_sample_data(database *sql.DB) {
+func addSampleData(database *sql.DB) {
 	sampleNames := map[string]string{"John": "Santore", "Enping": "Li", "Margaret": "Black",
 		"Seikyung": "Jung", "Haleh": "Khojasteh", "Abdul": "Sattar", "Paul": "Kim", "Laura": "Gross"}
 	statement := "INSERT INTO STUDENTS (banner_id, first_name, last_name, gpa, credits)" +
@@ -95,16 +102,19 @@ func add_sample_data(database *sql.DB) {
 
 func addCourseData(database *sql.DB) {
 	insert_statement := "INSERT INTO COURSES (course_prefix, course_number, description) VALUES (?,?,?);"
+	prepped_statement, err := database.Prepare(insert_statement)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	for courseandNum, desc := range sampleData {
 		prefix := courseandNum[:4]
 		courseNumber := courseandNum[4:]
-		intCourseNum, err := strconv.Atoi(courseandNum)
-		fmt.Println(prefix)
-		fmt.Println(courseNumber)
-		prepped_statement, err := database.Prepare(insert_statement)
+		intCourseNum, err := strconv.Atoi(courseNumber)
 		if err != nil {
 			log.Fatalln(err)
 		}
+		fmt.Println(prefix)
+		fmt.Println(courseNumber)
 		prepped_statement.Exec(prefix, intCourseNum, desc)
 	}
 }
