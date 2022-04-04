@@ -4,10 +4,10 @@ import (
 	//	"database/sql"
 	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3" //import for side effects
 	"log"
 	"math/rand"
 	"strconv"
-	//	_ "github.com/mattn/go-sqlite3" //import for side effects
 	//	"log"
 	//	"math/rand"
 )
@@ -55,12 +55,13 @@ func create_tables(database *sql.DB) {
 		"gpa REAL DEFAULT 0," +
 		"credits INTEGER DEFAULT 0);"
 	database.Exec(createStatement1)
-	courseCreateStatement := "CREATE TABLE IF NOT EXISTS course(   " +
+	courseCreateStatement := "CREATE TABLE IF NOT EXISTS courses(   " +
 		" course_prefix TEXT NOT NULL,  " +
 		"  course_number INTEGER NOT NULL,  " +
 		"  cap INTEGER DEFAULT 20,    description TEXT,   " +
-		" PRIMARY KEY(course_prefix, course_number)"
+		" PRIMARY KEY(course_prefix, course_number));"
 	database.Exec(courseCreateStatement)
+
 	regcourseCreateStatement := "CREATE TABLE IF NOT EXISTS class_list(" +
 		"registration_id INTEGER PRIMARY KEY," +
 		"course_prefix TEXT NOT NULL," +
@@ -70,8 +71,11 @@ func create_tables(database *sql.DB) {
 		"FOREIGN KEY (banner_id) REFERENCES student (banner_id)" +
 		"ON DELETE CASCADE ON UPDATE NO ACTION," +
 		"FOREIGN KEY (course_prefix, course_number) REFERENCES courses (course_prefix, course_number)" +
-		"ON DELETE CASCADE ON UPDATE NO ACTION"
-	database.Exec(regcourseCreateStatement)
+		"ON DELETE CASCADE ON UPDATE NO ACTION);"
+	_, err := database.Exec(regcourseCreateStatement)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func add_sample_data(database *sql.DB) {
@@ -98,7 +102,7 @@ func addCourseData(database *sql.DB) {
 	for courseandNum, desc := range sampleData {
 		prefix := courseandNum[:4]
 		courseNumber := courseandNum[4:]
-		intCourseNum, err := strconv.Atoi(courseandNum)
+		intCourseNum, err := strconv.Atoi(courseNumber)
 		fmt.Println(prefix)
 		fmt.Println(courseNumber)
 		prepped_statement, err := database.Prepare(insert_statement)
