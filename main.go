@@ -37,6 +37,7 @@ func main() {
 	add_sample_data(myDatabase)
 	addCourseData(myDatabase)
 	register_students(myDatabase)
+	findLowGPAStudents(myDatabase)
 }
 
 func OpenDataBase(dbfile string) *sql.DB {
@@ -103,8 +104,8 @@ func addCourseData(database *sql.DB) {
 		prefix := courseandNum[:4]
 		courseNumber := courseandNum[4:]
 		intCourseNum, err := strconv.Atoi(courseNumber)
-		fmt.Println(prefix)
-		fmt.Println(courseNumber)
+		//		fmt.Println(prefix)
+		//		fmt.Println(courseNumber)
 		prepped_statement, err := database.Prepare(insert_statement)
 		if err != nil {
 			log.Fatalln(err)
@@ -131,5 +132,24 @@ func register_students(database *sql.DB) {
 		if bannerid > 1008 {
 			break
 		}
+	}
+}
+
+func findLowGPAStudents(database *sql.DB) {
+	var firstN, lastN string
+	var gpa float64
+	selectStatement := "SELECT first_name, last_name, gpa FROM students WHERE students.gpa < 2"
+	resultset, err := database.Query(selectStatement)
+	if err != nil {
+		log.Fatalln("couldn't get data: ", err)
+	}
+	defer resultset.Close()
+	for resultset.Next() {
+		err := resultset.Scan(&firstN, &lastN, &gpa)
+		if err != nil {
+			log.Fatalln("error reading data from resultset", err)
+		}
+		fmt.Println(firstN, " ", lastN, " : ", gpa)
+
 	}
 }
